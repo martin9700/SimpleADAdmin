@@ -351,7 +351,3 @@
 
     $SAUser
 }
-
-
-
-Get-SAUser -User mpugh #| fl *
