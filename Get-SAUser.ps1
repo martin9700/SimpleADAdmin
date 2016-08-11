@@ -87,52 +87,48 @@
         }
     }
 
-    $ACCOUNTDISABLE            = 0x000002
     $DONT_EXPIRE_PASSWORD      = 0x010000
     $PASSWORD_EXPIRED          = 0x800000
-    $ACCOUNT_LOCKOUT           = 16
     $ADS_UF_PASSWD_NOTREQD     = 0x0020
 
     $Global:SAUser = [PSCustomObject]@{
-        Name = $Found.properties.displayname[0]
-        SamAccountName = $Found.properties.samaccountname[0]
-        Title = $Found.properties.title[0]
-        Description = $Found.properties.description[0]
-        GivenName = $Found.properties.givenname[0]
-        Surname = $Found.properties.sn[0]
+        Name                 = $Found.properties.displayname[0]
+        SamAccountName       = $Found.properties.samaccountname[0]
+        Title                = $Found.properties.title[0]
+        Description          = $Found.properties.description[0]
+        GivenName            = $Found.properties.givenname[0]
+        Surname              = $Found.properties.sn[0]
+        Email                = $Found.properties.mail[0]
         PasswordNeverExpires = [bool]($Found.userAccountControl -band $DONT_EXPIRE_PASSWORD)
-        PasswordNotRequired = [bool]($Found.userAccountControl -band $ADS_UF_PASSWD_NOTREQD)
-        DistinguishedName = $Found.properties.distinguishedname[0]
-        UserPrincipalName = $Found.properties.userprincipalname[0]
-        ObjectGUID = New-Object GUID(,$Found.properties.objectguid[0])
-        ObjectSID = (New-Object System.Security.Principal.SecurityIdentifier($Found.properties.objectsid[0],0)).Value
-        MemberOf = $Found.properties.memberof
-        Manager = $Found.properties.manager[0]
-        LastLogon = ""
-        LockedOut = ($Found.properties.lockouttime[0] -gt 0)
-        BadPasswordCount = $Found.properties.badpwdcount[0]
-        PasswordExpired = [bool]($Found.userAccountControl -band $PASSWORD_EXPIRED)
-        PasswordLastSet = [DateTime]::FromFileTime($Found.properties.pwdlastset[0])
+        PasswordNotRequired  = [bool]($Found.userAccountControl -band $ADS_UF_PASSWD_NOTREQD)
+        DistinguishedName    = $Found.properties.distinguishedname[0]
+        UserPrincipalName    = $Found.properties.userprincipalname[0]
+        ObjectGUID           = New-Object GUID(,$Found.properties.objectguid[0])
+        ObjectSID            = (New-Object System.Security.Principal.SecurityIdentifier($Found.properties.objectsid[0],0)).Value
+        MemberOf             = $Found.properties.memberof
+        Manager              = $Found.properties.manager[0]
+        LastLogon            = "Unknown"
+        LockedOut            = ($Found.properties.lockouttime[0] -gt 0)
+        BadPasswordCount     = $Found.properties.badpwdcount[0]
+        PasswordExpired      = [bool]($Found.userAccountControl -band $PASSWORD_EXPIRED)
+        PasswordLastSet      = [DateTime]::FromFileTime($Found.properties.pwdlastset[0])
     }
 
     #Add Enable property, and dynamically retrieve other information
     $SAUser | Add-Member -MemberType ScriptProperty -Force -Name Enabled -Value { 
         $ACCOUNTDISABLE            = 0x000002
-        $DONT_EXPIRE_PASSWORD      = 0x010000
         $PASSWORD_EXPIRED          = 0x800000
-        $ACCOUNT_LOCKOUT           = 16
-        $ADS_UF_PASSWD_NOTREQD     = 0x0020
 
         $Searcher = [ADSISearcher]"(&(objectCategory=person)(objectClass=user)(samAccountName=$($this.SamAccountName)))"
         $Found = $Searcher.FindOne()
 
         -not [bool]($Found.userAccountControl -band $ACCOUNTDISABLE)
 
-        $this.LockedOut = ($Found.properties.lockouttime[0] -gt 0)
+        $this.LockedOut        = ($Found.properties.lockouttime[0] -gt 0)
         $this.BadPasswordCount = $Found.properties.badpwdcount[0]
-        $this.PasswordExpired = [bool]($Found.userAccountControl -band $PASSWORD_EXPIRED)
-        $this.PasswordLastSet = [DateTime]::FromFileTime($Found.properties.pwdlastset[0])
-        $this.MemberOf = $Found.properties.memberof
+        $this.PasswordExpired  = [bool]($Found.userAccountControl -band $PASSWORD_EXPIRED)
+        $this.PasswordLastSet  = [DateTime]::FromFileTime($Found.properties.pwdlastset[0])
+        $this.MemberOf         = $Found.properties.memberof
     }
 
     #Set Default View values
@@ -151,7 +147,10 @@
             [string]$Filter = ".*"
         )
 
-        $Groups = ForEach ($Group in $this.MemberOf)
+        $Searcher = [ADSISearcher]"(&(objectCategory=person)(objectClass=user)(samAccountName=$($this.SamAccountName)))"
+        $Found = $Searcher.FindOne()
+
+        $Groups = ForEach ($Group in $Found.properties.memberof)
         {
             If ($Group -match "cn=(?<GroupName>.*?)(?<!\\),")
             {
@@ -189,14 +188,19 @@
         If (@($Groups).Count -gt 1)
         {
             $Remove = $Groups | Out-GridView -Title "Which groups do you want to remove from $($this.Name)?" -OutputMode Multiple
+            If (@($Remove).Count -eq 0)
+            {
+                Write-Warning "No groups selected"
+                Return
+            }
         }
         ElseIf (@($Groups).Count -eq 1) 
         {
-            $Remove = $Groups
+            $Remove = @($Groups)
         }
         Else
         {
-            Write-Verbose "No groups matched $Name"
+            Write-Warning "No groups matched $Name"
             Return
         }
 
@@ -204,6 +208,7 @@
         {
             $GroupObj = [ADSI]"LDAP://$($Group.DistinguishedName)"
             $GroupObj.Remove("LDAP://$($this.DistinguishedName)")
+            Write-Verbose "Removed from group $($Group.Name)" -Verbose
         }
     }
 
@@ -213,35 +218,101 @@
             [Parameter(Mandatory)]
             [string]$Name
         )
-
-        Add-ADGroupMember -Identity $Name -Members $this.SamAccountName
+        
+        $Searcher = [ADSISearcher]"(&(objectCategory=group)(objectClass=group)(name=*$Name*))"
+        $Searcher.PageSize = 1000
+        $Found = $Searcher.FindAll()
+        If (@($Found).Count -gt 1)
+        {
+            $Selected = $Found | Select @{Name="SamAccountName";Expression={ $_.properties.samaccountname }},@{Name="DisplayName";Expression={ $_.properties.displayname }} | Out-GridView -Title "Select the groups to add" -OutputMode Multiple
+            If (@($Selected).Count -ge 1)
+            {
+                $Found = ForEach ($Group in $Selected)
+                {
+                    $Searcher = [ADSISearcher]"(&(objectCategory=group)(objectClass=group)(samAccountName=$($Group.SamAccountName)))"
+                    $Searcher.FindOne()
+                }
+            }
+            Else
+            {
+                Write-Warning "No group selected"
+                Return
+            }
+        }
+        ElseIf (@($Found).Count -eq 0)
+        {
+            Write-Warning "No group matching *$Name* found"
+            Return
+        }
+        ForEach ($Group in $Found)
+        {
+            $GroupObj = [ADSI]"LDAP://$($Group.properties.distinguishedname)"
+            $GroupObj.Add("LDAP://$($this.distinguishedName)")
+            Write-Verbose "Added to Group $($Group.properties.name), will take a minute to show up in `$SAUser" -Verbose
+        }
     }
-    <#
-    
 
+    #Reset Password
+    $SAUser | Add-Member -Force -MemberType ScriptMethod -Name ResetPassword -Value {
+        $Password1 = Get-Credential -UserName $this.SamAccountName -Message "Enter new password"
+        $Password2 = Get-Credential -UserName $this.SamAccountName -Message "Verify new password"
+        If ($Password1.GetNetworkCredential().Password -eq $Password2.GetNetworkCredential().Password)
+        {
+            $UserObj = [ADSI]"LDAP://$($this.distinguishedName)"
+            $UserObj.SetPassword($Password1.GetNetworkCredential().Password)
+        }
+        Else
+        {
+            Write-Warning "Passwords did not match"
+        }
+    }
 
+    #Populate LastLogon property
     $SAUser | Add-Member -Force -MemberType ScriptMethod -Name GetLastLogon -Value {
-        $DCs = Get-ADDomainController -Filter * | Select -ExpandProperty Name
+        $DCs = [System.DirectoryServices.ActiveDirectory.Domain]::GetCurrentDomain().DomainControllers | Select -ExpandProperty Name
         $Count = 1
         $DCData = ForEach ($DC in ($DCs))
         {
             Write-Progress -Activity "Retrieving user data from Domain Controllers" -Status "...$DC ($Count of $($DCs.Count))" -Id 0 -PercentComplete ($Count * 100 / $DCs.Count)
-            Get-ADUser $this.SamAccountName -Server $DC -Properties lastLogon | Select @{Name="Last Logon";Expression={ If ($_.lastLogon) {[datetime]::FromFileTime($_.LastLogon)} }}
+            $UserObj = [ADSI]"LDAP://$DC/$($this.distinguishedName)"
+            If ($UserObj.lastlogon[0] -ne $null)
+            {
+                [datetime]::FromFileTime($UserObj.ConvertLargeIntegerToInt64($UserObj.lastLogon[0]))
+            }
             $Count ++
         }
         Write-Progress -Activity " " -Status " " -Completed
-        $this.LastLogon = $DCData | Sort "Last Logon" -Descending | Select -First 1 | Select -ExpandProperty "Last Logon"
+        $this.LastLogon = $DCData | Sort -Descending | Select -First 1
         $this
     }
 
-
-    $SAUser | Add-Member -Force -MemberType ScriptMethod -Name ResetPassword -Value {
-        Set-ADAccountPassword -Identity $this.SamAccountName -Reset
-    }
+    #Find out on what computer a user was last locked up at
     $SAUser | Add-Member -Force -MemberType ScriptMethod -Name FindLockout -Value {
-        Find-LockOut $this.SamAccountName
+        Param (
+            [datetime]$Start = ((Get-Date).AddDays(-2)),
+            [datetime]$End = (Get-Date)
+        )
+
+        Write-Verbose "Locating PDC Emulator..." -Verbose
+        $PDCEmulator = [System.DirectoryServices.ActiveDirectory.Domain]::GetCurrentDomain().DomainControllers | Where Roles -Contains "PdcRole" | Select -ExpandProperty Name
+        Write-Verbose "PDC Emulator: $PDCEmulator" -Verbose
+
+        $FilterHash = @{
+            LogName = "Security"
+            StartTime = $Start
+            EndTime = $End
+            ID = 4740
+        }
+
+        Write-Verbose "Searching (be patient)..." -Verbose
+        Try {
+            Get-WinEvent -ComputerName $PDCEmulator -FilterHashtable $FilterHash -ErrorAction Stop | Where Message -Like "*$($this.SamAccountName)*" | Select TimeCreated,@{Name="User";Expression={$Username}},@{Name="LockedOn";Expression={$PSItem.Properties.Value[1]}},@{Name="DC";Expression={$PDCEmulator}}
+        }
+        Catch {
+            Write-Error "Unable to retrieve event log for $PDCEmulator because ""$_""" -ErrorAction Stop
+        }
     }
-    #>
+
     $SAUser
 }
 
