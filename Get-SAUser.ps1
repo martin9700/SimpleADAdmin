@@ -105,7 +105,7 @@
         Write-Verbose "No user matching $SAUser, trying for a match"
         $Searcher = [ADSISearcher]"(&(objectCategory=person)(objectClass=user)(displayName=*$Identity*))"
         $Found = $Searcher.FindAll()
-        If ($Found.Count -gt 1)
+        If (@($Found).Count -gt 1)
         {
             #Found more than one, need to select which one you want
             $Selected = $Found | Select @{Name="SamAccountName";Expression={ $_.properties.samaccountname }},@{Name="DisplayName";Expression={ $_.properties.displayname }} | Out-GridView -Title "Select the user you want" -PassThru
@@ -117,7 +117,7 @@
             $Searcher = [ADSISearcher]"(&(objectCategory=person)(objectClass=user)(samAccountName=$($Selected.SamAccountName)))"
             $Found = $Searcher.FindOne()
         }
-        If ($Found.Count -eq 0)
+        If (@($Found).Count -eq 0)
         {
             Write-Error "No user found, exiting" -ErrorAction Stop
         }
@@ -128,26 +128,26 @@
     $ADS_UF_PASSWD_NOTREQD     = 0x0020
 
     $Global:SAUser = [PSCustomObject]@{
-        Name                 = $Found.properties.displayname[0]
-        SamAccountName       = $Found.properties.samaccountname[0]
-        Title                = $Found.properties.title[0]
-        Description          = $Found.properties.description[0]
-        GivenName            = $Found.properties.givenname[0]
-        Surname              = $Found.properties.sn[0]
-        Email                = $Found.properties.mail[0]
+        Name                 = $Found.properties.displayname | Select -First 1
+        SamAccountName       = $Found.properties.samaccountname | Select -First 1
+        Title                = $Found.properties.title | Select -First 1
+        Description          = $Found.properties.description | Select -First 1
+        GivenName            = $Found.properties.givenname | Select -First 1
+        Surname              = $Found.properties.sn | Select -First 1
+        Email                = $Found.properties.mail | Select -First 1
         PasswordNeverExpires = [bool]($Found.userAccountControl -band $DONT_EXPIRE_PASSWORD)
         PasswordNotRequired  = [bool]($Found.userAccountControl -band $ADS_UF_PASSWD_NOTREQD)
-        DistinguishedName    = $Found.properties.distinguishedname[0]
-        UserPrincipalName    = $Found.properties.userprincipalname[0]
-        ObjectGUID           = New-Object GUID(,$Found.properties.objectguid[0])
-        ObjectSID            = (New-Object System.Security.Principal.SecurityIdentifier($Found.properties.objectsid[0],0)).Value
+        DistinguishedName    = $Found.properties.distinguishedname | Select -First 1
+        UserPrincipalName    = $Found.properties.userprincipalname | Select -First 1
+        ObjectGUID           = New-Object GUID(,($Found.properties.objectguid | Select -First 1))
+        ObjectSID            = (New-Object System.Security.Principal.SecurityIdentifier(($Found.properties.objectsid | Select -First 1),0)).Value
         MemberOf             = $Found.properties.memberof
-        Manager              = $Found.properties.manager[0]
+        Manager              = $Found.properties.manager | Select -First 1
         LastLogon            = "Unknown"
-        LockedOut            = ($Found.properties.lockouttime[0] -gt 0)
-        BadPasswordCount     = $Found.properties.badpwdcount[0]
+        LockedOut            = (($Found.properties.lockouttime | Select -First 1) -gt 0)
+        BadPasswordCount     = $Found.properties.badpwdcount | Select -First 1
         PasswordExpired      = [bool]($Found.userAccountControl -band $PASSWORD_EXPIRED)
-        PasswordLastSet      = [DateTime]::FromFileTime($Found.properties.pwdlastset[0])
+        PasswordLastSet      = [DateTime]::FromFileTime(($Found.properties.pwdlastset | Select -First 1))
     }
 
     #Add Enable property, and dynamically retrieve other information
@@ -160,10 +160,10 @@
 
         -not [bool]($Found.userAccountControl -band $ACCOUNTDISABLE)
 
-        $this.LockedOut        = ($Found.properties.lockouttime[0] -gt 0)
-        $this.BadPasswordCount = $Found.properties.badpwdcount[0]
+        $this.LockedOut        = (($Found.properties.lockouttime | Select -First 1) -gt 0)
+        $this.BadPasswordCount = $Found.properties.badpwdcount | Select -First 1
         $this.PasswordExpired  = [bool]($Found.userAccountControl -band $PASSWORD_EXPIRED)
-        $this.PasswordLastSet  = [DateTime]::FromFileTime($Found.properties.pwdlastset[0])
+        $this.PasswordLastSet  = [DateTime]::FromFileTime(($Found.properties.pwdlastset | Select -First 1))
         $this.MemberOf         = $Found.properties.memberof
     }
 
@@ -292,7 +292,7 @@
     $SAUser | Add-Member -Force -MemberType ScriptMethod -Name ResetPassword -Value {
         $Password1 = Get-Credential -UserName $this.SamAccountName -Message "Enter new password"
         $Password2 = Get-Credential -UserName $this.SamAccountName -Message "Verify new password"
-        If ($Password1.GetNetworkCredential().Password -eq $Password2.GetNetworkCredential().Password)
+        If ($Password1.GetNetworkCredential().Password -ceq $Password2.GetNetworkCredential().Password)
         {
             $UserObj = [ADSI]"LDAP://$($this.distinguishedName)"
             $UserObj.SetPassword($Password1.GetNetworkCredential().Password)
@@ -307,13 +307,13 @@
     $SAUser | Add-Member -Force -MemberType ScriptMethod -Name GetLastLogon -Value {
         $DCs = [System.DirectoryServices.ActiveDirectory.Domain]::GetCurrentDomain().DomainControllers | Select -ExpandProperty Name
         $Count = 1
-        $DCData = ForEach ($DC in ($DCs))
+        $DCData = ForEach ($DC in $DCs)
         {
             Write-Progress -Activity "Retrieving user data from Domain Controllers" -Status "...$DC ($Count of $($DCs.Count))" -Id 0 -PercentComplete ($Count * 100 / $DCs.Count)
             $UserObj = [ADSI]"LDAP://$DC/$($this.distinguishedName)"
-            If ($UserObj.lastlogon[0] -ne $null)
+            If (($UserObj.lastlogon | Select -First 1) -ne $null)
             {
-                [datetime]::FromFileTime($UserObj.ConvertLargeIntegerToInt64($UserObj.lastLogon[0]))
+                [datetime]::FromFileTime($UserObj.ConvertLargeIntegerToInt64(($UserObj.lastLogon | Select -First 1)))
             }
             $Count ++
         }
