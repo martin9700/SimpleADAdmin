@@ -36,6 +36,8 @@
             Write-Error "No group found, exiting" -ErrorAction Stop
         }
     }
+
+    #Thanks Richard Siddaway for breaking this out
     $GroupTypes = @{
         2 = [PSCustomObject]@{Category="Distribution";Scope="Global"}
         4 = [PSCustomObject]@{Category="Distribution";Scope="DomainLocal"}
