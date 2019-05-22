@@ -197,7 +197,7 @@
                 }
             }
         }
-        $Groups | Sort
+        $Groups | Sort-Object
     }
 
     #Remove Group method, includes a filter and support for multiple groups
@@ -318,7 +318,7 @@
             $Count ++
         }
         Write-Progress -Activity " " -Status " " -Completed
-        $this.LastLogon = $DCData | Sort -Descending | Select-Object -First 1
+        $this.LastLogon = $DCData | Sort-Object -Descending | Select-Object -First 1
         $this
     }
 
