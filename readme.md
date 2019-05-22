@@ -3,8 +3,12 @@ The idea behind Get-SAUser was to provide a single function to do your most comm
 
 [Blog post about Get-SAUser.](https://thesurlyadmin.com/2016/08/11/simple-day-to-day-administration/)
 
+![Populate $SAUser](/media/Get-SAUser1.png)
+
 # $SAUser
-Get-SAUser creates a global variable called $SAUser, and this is where all the magic happens.  After running Get-SAUser, it will display some basic details about the user (and a better default set then what Get-ADUser gives you) and populate the $SAUser variable.  From $SAUser you can run several methods:
+Get-SAUser creates a global variable called $SAUser, and this is where all the magic happens.  After running Get-SAUser, it will display some basic details about the user (and a better default set then what Get-ADUser gives you) and populate the $SAUser variable.  There is a lot more data in $SAUser then the default view, but I wanted to keep it simple.  You use methods assigned to $SAUser to make changes (see below).
+
+![All $SAUser properties](/media/Get-SAUser2.png)
 
 ## Methods
         AddGroup
@@ -46,7 +50,8 @@ Get-SAUser creates a global variable called $SAUser, and this is where all the m
                   Usage: $SAUser.Unlock()
             Description: Will unlock the user account
                Overload: None
-			   
+
+![Example of using a method](/media/Get-SAUser3.png)
 It's also important to remember that $SAUser is dynamically updated every time you display the variable.  The following fields will update every time:
 
              Enabled
