@@ -5,7 +5,7 @@ The idea behind Get-SAUser was to provide a single function to do your most comm
 
 ![Populate $SAUser](/media/Get-SAUser1.png)
 
-# $SAUser
+## $SAUser
 Get-SAUser creates a global variable called $SAUser, and this is where all the magic happens.  After running Get-SAUser, it will display some basic details about the user (and a better default set then what Get-ADUser gives you) and populate the $SAUser variable.  There is a lot more data in $SAUser then the default view, but I wanted to keep it simple.  You use methods assigned to $SAUser to make changes (see below).
 
 ![All $SAUser properties](/media/Get-SAUser2.png)
