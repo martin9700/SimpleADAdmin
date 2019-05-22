@@ -30,8 +30,8 @@ $ModuleInformation = @{
     ModuleVersion   = $ENV:APPVEYOR_BUILD_VERSION
     Company         = "www.thesurlyadmin.com"
     Description     = "Active Directory Administration made easy, without the need for RSAT"
-    ProjectURI      = "https://github.com/martin9700/Get-SAUser"
-    LicenseURI      = "https://github.com/martin9700/Get-SAUser/blob/master/LICENSE"
+    ProjectURI      = "https://github.com/martin9700/$ModuleName"
+    LicenseURI      = "https://github.com/martin9700/$ModuleName/blob/master/LICENSE"
     PassThru        = $true
 }
 Invoke-PSModuleBuild @ModuleInformation
