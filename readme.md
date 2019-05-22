@@ -1,4 +1,4 @@
-[BuildStatus](https://ci.appveyor.com/api/projects/status/e5wk05bj6yy3pymf?svg=true) [![PowerShell Gallery](https://img.shields.io/powershellgallery/dt/SimpleADAdmin.svg?style=plastic)](https://www.powershellgallery.com/packages/SimpleADAdmin)
+[![BuildStatus](https://ci.appveyor.com/api/projects/status/e5wk05bj6yy3pymf?svg=true)] [![PowerShell Gallery](https://img.shields.io/powershellgallery/dt/SimpleADAdmin.svg?style=plastic)](https://www.powershellgallery.com/packages/SimpleADAdmin)
 
 # Get-SAUser
 The idea behind Get-SAUser was to provide a single function to do your most common administrative tasks.  When managing users on a day to day basis what do we do?  Reset passwords, unlock accounts, add and remove from groups and do some forensics about why they locked out in the first place.  All of this can be done from Get-SAUser.
