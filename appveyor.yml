@@ -1,0 +1,15 @@
+image: WMF 5
+
+branches:
+    only:
+        - master
+
+environment:
+  PSGalleryAPIKey:
+    secure: KgC+MGyzuxPQDoQkBVowVDuSsxIZrKdA+B0+l2U6tk+9t4oD07z4zZj8Rk56tfBn
+
+build:
+  verbosity: detailed
+  
+build_script:
+  - ps: . .\build.ps1
