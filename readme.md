@@ -52,7 +52,9 @@ Get-SAUser creates a global variable called $SAUser, and this is where all the m
                Overload: None
 
 ![Example of using a method](/media/Get-SAUser3.png)
-It's also important to remember that $SAUser is dynamically updated every time you display the variable.  The following fields will update every time:
+
+## Dynamic Updates
+$SAUser is dynamically updated every time you display the variable.  The following fields will update every time:
 
              Enabled
              LockedOut
