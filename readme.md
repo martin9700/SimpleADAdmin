@@ -1,11 +1,18 @@
-#Get-SAUser
+![BuildStatus](https://ci.appveyor.com/api/projects/status/e5wk05bj6yy3pymf?svg=true) [![PowerShell Gallery](https://img.shields.io/powershellgallery/dt/SimpleADAdmin.svg?style=plastic)](https://www.powershellgallery.com/packages/SimpleADAdmin)
+
+# Get-SAUser
 The idea behind Get-SAUser was to provide a single function to do your most common administrative tasks.  When managing users on a day to day basis what do we do?  Reset passwords, unlock accounts, add and remove from groups and do some forensics about why they locked out in the first place.  All of this can be done from Get-SAUser.
 
 [Blog post about Get-SAUser.](https://thesurlyadmin.com/2016/08/11/simple-day-to-day-administration/)
 
-#$SAUser
-Get-SAUser creates a global variable called $SAUser, and this is where all the magic happens.  After running Get-SAUser, it will display some basic details about the user (and a better default set then what Get-ADUser gives you) and populate the $SAUser variable.  From $SAUser you can run several methods:
+![Populate $SAUser](/media/Get-SAUser1.png)
 
+## $SAUser
+Get-SAUser creates a global variable called $SAUser, and this is where all the magic happens.  After running Get-SAUser, it will display some basic details about the user (and a better default set then what Get-ADUser gives you) and populate the $SAUser variable.  There is a lot more data in $SAUser then the default view, but I wanted to keep it simple.  You use methods assigned to $SAUser to make changes (see below).
+
+![All $SAUser properties](/media/Get-SAUser2.png)
+
+## Methods
         AddGroup
                   Usage: $SAUser.AddGroup("NameOfGroup")
             Description: Add the user to a group.
@@ -45,8 +52,11 @@ Get-SAUser creates a global variable called $SAUser, and this is where all the m
                   Usage: $SAUser.Unlock()
             Description: Will unlock the user account
                Overload: None
-			   
-It's also important to remember that $SAUser is dynamically updated every time you display the variable.  The following fields will update every time:
+
+![Example of using a method](/media/Get-SAUser3.png)
+
+## Dynamic Updates
+$SAUser is dynamically updated every time you display the variable.  The following fields will update every time:
 
              Enabled
              LockedOut
