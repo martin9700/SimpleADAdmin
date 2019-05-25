@@ -33,6 +33,7 @@
                   Usage: $SAUser.RemoveMember(SamAccountName)
             Description: Remove the designated user to the group
                Overload: SamAccountName for the user you want to remove
+
     .PARAMETER Identity
         Name of the group you want to interact with.  If the group cannot be found, it will attempt to look for groups with a like
         name and give you the option of selecting one of those.
