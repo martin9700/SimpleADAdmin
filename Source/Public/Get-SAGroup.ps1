@@ -10,38 +10,42 @@
     )
 
     $Searcher = [ADSISearcher]"(&(objectClass=group)(samAccountName=$Identity))"
-    $Found = $Searcher.FindAll()
+    $Found = @($Searcher.FindAll())
     If ($Found.Count -ne 1)
     {
         If ($Found.Count -eq 0)
         {
-            Write-Verbose "No user matching $SAUser, trying for a match"
+            Write-Verbose "No user matching ""$Identity"", trying for a match"
             $Searcher = [ADSISearcher]"(&(objectClass=group)(name=*$Identity*))"
-            $Found = $Searcher.FindAll()
+            $Found = @($Searcher.FindAll())
         }
-        If (@($Found).Count -gt 1)
+        If ($Found.Count -gt 1)
         {
             #Found more than one, need to select which one you want
-            $Selected = $Found | Select @{Name="SamAccountName";Expression={ $_.properties.samaccountname }},@{Name="DisplayName";Expression={ $_.properties.displayname }},@{Name="Description";Expression={ $_.properties.description }} | Out-GridView -Title "Select the group you want" -PassThru
+            $Selected = $Found | 
+                Select @{Name="SamAccountName";Expression={ $_.properties.samaccountname }},
+                    @{Name="DisplayName";Expression={ $_.properties.displayname }},
+                    @{Name="Description";Expression={ $_.properties.description }} | 
+                Out-GridView -Title "Select the correct group" -PassThru
             If (@($Selected).Count -eq 0)
             {
-                Write-Warning "No user selected"
+                Write-Warning "No group selected"
                 Return
             }
             $Searcher = [ADSISearcher]"(&(objectClass=group)(samAccountName=$($Selected.SamAccountName)))"
             $Found = $Searcher.FindOne()
         }
-        If (@($Found).Count -eq 0)
+        ElseIf ($Found.Count -eq 0)
         {
-            Write-Error "No group found, exiting" -ErrorAction Stop
+            Write-Error "Unable to locate group matching *$Identity*" -ErrorAction Stop
         }
     }
 
     #Thanks Richard Siddaway for breaking this out
     $GroupTypes = @{
-        2 = [PSCustomObject]@{Category="Distribution";Scope="Global"}
-        4 = [PSCustomObject]@{Category="Distribution";Scope="DomainLocal"}
-        8 = [PSCustomObject]@{Category="Distribution";Scope="Universal"}
+        2           = [PSCustomObject]@{Category="Distribution";Scope="Global"}
+        4           = [PSCustomObject]@{Category="Distribution";Scope="DomainLocal"}
+        8           = [PSCustomObject]@{Category="Distribution";Scope="Universal"}
         -2147483646 = [PSCustomObject]@{Category="Security";Scope="Global"}
         -2147483644 = [PSCustomObject]@{Category="Security";Scope="DomainLocal"}
         -2147483643 = [PSCustomObject]@{Category="Security";Scope="BuiltinLocal"}
@@ -49,7 +53,7 @@
     }
     
     $Global:SAGroup = [PSCustomObject]@{
-        Name                 = $Found.properties.displayname | Select -First 1
+        Name                 = $Found.properties.name | Select -First 1
         SamAccountName       = $Found.properties.samaccountname | Select -First 1        
         Description          = $Found.properties.description | Select -First 1
         Info                 = $Found.properties.info | Select -First 1
@@ -63,7 +67,6 @@
         GroupCategory        = $GroupTypes[($Found.properties.grouptype | Select -First 1)].Category
         GroupScope           = $GroupTypes[($Found.properties.grouptype | Select -First 1)].Scope
         WhenCreated          = $Found.properties.whencreated | Select -First 1
-        #LastModified         = $Found.properties.whenchanged | Select -First 1
     }
 
     #Display default properties
@@ -79,7 +82,3 @@
         $this.Members   = $Found.properties.member
     }
 }
-
-
-get-sagroup -Identity winops*
-$SAGroup
