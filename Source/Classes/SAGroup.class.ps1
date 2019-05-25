@@ -43,6 +43,7 @@
             $this.EnumerateFields()
         }
 
+        # Using default display properties to order the list properly
         $DefaultDisplayProperties = @(
             "Name"
             "SamAccountName"
@@ -162,5 +163,13 @@
             $this.GetMemberObject($Member, $true)
         }
         Return $Results
+    }
+
+    [void] AddMember ([string]$Identity)
+    {
+    }
+
+    [void] RemoveMember ([string]$Identity)
+    {
     }
 }
