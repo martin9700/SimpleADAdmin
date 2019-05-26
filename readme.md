@@ -1,7 +1,7 @@
 ![BuildStatus](https://ci.appveyor.com/api/projects/status/e5wk05bj6yy3pymf?svg=true) [![PowerShell Gallery](https://img.shields.io/powershellgallery/dt/SimpleADAdmin.svg?style=plastic)](https://www.powershellgallery.com/packages/SimpleADAdmin)
 
-# Get-SAUser
-The idea behind Get-SAUser was to provide a single function to do your most common administrative tasks.  When managing users on a day to day basis what do we do?  Reset passwords, unlock accounts, add and remove from groups and do some forensics about why they locked out in the first place.  All of this can be done from Get-SAUser.
+# SimpleADAdmin
+The idea behind SimpleADAdmin was to provide a single function to do your most common administrative tasks.  When managing users on a day to day basis what do we do?  Reset passwords, unlock accounts, add and remove from groups and do some forensics about why they locked out in the first place.  All of this can be done from Get-SAUser.  A new addition is Get-SAGroup which allows you to do similar things with Active Directory groups (see below).
 
 [Blog post about Get-SAUser.](https://thesurlyadmin.com/2016/08/11/simple-day-to-day-administration/)
 
@@ -12,7 +12,7 @@ Get-SAUser creates a global variable called $SAUser, and this is where all the m
 
 ![All $SAUser properties](/media/Get-SAUser2.png)
 
-## Methods
+### Methods
         AddGroup
                   Usage: $SAUser.AddGroup("NameOfGroup")
             Description: Add the user to a group.
@@ -55,13 +55,32 @@ Get-SAUser creates a global variable called $SAUser, and this is where all the m
 
 ![Example of using a method](/media/Get-SAUser3.png)
 
-## Dynamic Updates
-$SAUser is dynamically updated every time you display the variable.  The following fields will update every time:
 
-             Enabled
-             LockedOut
-             BadPasswordCount
-             PasswordExpired
-             PasswordLastSet
-             MemberOf
+## Get-SAGroup
+Get-SAGroup works just like Get-SAUser, only focused on groups.  A global variable call $SAGroup is created, which also features a number of methods for working with the group.
+
+### Methods
+        GetMembers
+                  Usage: $SAUser.GetMembers()
+            Description: Shows every user and group who is a member of the group.
+               Overload: None
+
+        GetMembersRecursive
+                  Usage: $SAUser.GetMembersRecursive()
+            Description: Shows every user who is a member of the group, even if they are part of a group that's assigned to this one. 
+               Overload: None
+
+        AddMember
+                  Usage: $SAUser.AddMember(SamAccountName)
+            Description: Add the designated user to the group
+               Overload: SamAccountName for the user you want to add
+
+        RemoveMember
+                  Usage: $SAUser.RemoveMember(SamAccountName)
+            Description: Remove the designated user to the group
+               Overload: SamAccountName for the user you want to remove
+			   
+			   
+## Dynamic Updates
+One of the unique capabilities of both $SAUser and $SAGroup is the fact that all the properties in them will dynamically update every time you display the variable.  You'll be able to monitor your changes in real time.
 			 
