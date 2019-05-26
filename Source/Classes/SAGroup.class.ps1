@@ -147,6 +147,22 @@
         Return $Results
     }
 
+    hidden [PSCustomObject] ValidateUserName ([string]$Identity)
+    {
+        $Searcher = [ADSISearcher]"(&(objectCategory=person)(objectClass=user)(samAccountName=$Identity))"
+        $Found = $Searcher.FindOne()
+
+        If ($null -eq $Found.properties.samaccountname)
+        {
+            Write-Error "User name ""$Identity"" was not found" -ErrorAction Stop
+        }
+        $Result = [PSCustomObject]@{
+            Name = $Found.Properties.name
+            DN   = $Found.properties.distinguishedname
+        }
+        Return $Result
+    }
+
     [PSCustomObject[]] GetMembers()
     {
         $Results = ForEach ($Member in $this.Members)
@@ -167,9 +183,19 @@
 
     [void] AddMember ([string]$Identity)
     {
+        $User = $this.ValidateUserName($Identity)
+
+        $GroupObj = [ADSI]"LDAP://$($this.DistinguishedName)"
+        $GroupObj.Add("LDAP://$($User.DN)")
+        Write-Verbose "Added ""$($User.Name)"" to Group ""$($this.Name)"" which will take a few minutes to show up in `$SAGroup" -Verbose
     }
 
     [void] RemoveMember ([string]$Identity)
     {
+        $User = $this.ValidateUserName($Identity)
+
+        $GroupObj = [ADSI]"LDAP://$($this.DistinguishedName)"
+        $GroupObj.Remove("LDAP://$($User.DN)")
+        Write-Verbose "Removed ""$($User.Name)"" from group ""$($this.Name)""" -Verbose
     }
 }

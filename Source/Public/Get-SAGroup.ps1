@@ -75,8 +75,8 @@
         [string]$Identity
     )
 
-    # Clear old variable
-    Remove-Variable -Name SAGroup -Scope Global
+    # Clear old variable (if present)
+    Remove-Variable -Name SAGroup -Scope Global -ErrorAction SilentlyContinue
 
     # Find the group
     $Searcher = [ADSISearcher]"(&(objectClass=group)(samAccountName=$Identity))"
