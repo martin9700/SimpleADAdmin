@@ -66,7 +66,6 @@
 
     hidden [void] EnumerateFields ()
     {
-        $ACCOUNTDISABLE            = 0x000002
         $DONT_EXPIRE_PASSWORD      = 0x010000
         $PASSWORD_EXPIRED          = 0x800000
         $ADS_UF_PASSWD_NOTREQD     = 0x0020
@@ -102,9 +101,9 @@
             $Searcher = [ADSISearcher]"(distinguishedName=$Member)"
             $Found = $Searcher.FindOne()
             [PSCustomObject]@{
-                Name              = $Found.properties.name | Select -First 1
-                SamAccountName    = $Found.properties.samaccountname | Select -First 1
-                distinguishedName = $Found.properties.distinguishedname | Select -First 1
+                Name              = $Found.properties.name | Select-Object -First 1
+                SamAccountName    = $Found.properties.samaccountname | Select-Object -First 1
+                distinguishedName = $Found.properties.distinguishedname | Select-Object -First 1
             }
         }
         Return $Results
@@ -164,13 +163,13 @@
 
     [PSCustomObject[]] GetGroups ()
     {
-        $Groups = $this.GetGroupNames() | Sort
+        $Groups = $this.GetGroupNames() | Sort-Object
         Return $Groups
     }
 
     [PSCustomObject[]] GetGroups ( [string]$Filter )
     {
-        $Groups = $this.GetGroupNames() | Where Name -match $Filter | Sort
+        $Groups = $this.GetGroupNames() | Where-Object Name -match $Filter | Sort-Object
         Return $Groups
     }
 

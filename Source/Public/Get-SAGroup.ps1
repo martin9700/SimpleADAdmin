@@ -93,7 +93,7 @@
         {
             # Found more than one, need to select which one you want
             $Selected = $Found | 
-                Select @{Name="SamAccountName";Expression={ $_.properties.samaccountname }},
+                Select-Object @{Name="SamAccountName";Expression={ $_.properties.samaccountname }},
                     @{Name="DisplayName";Expression={ $_.properties.displayname }},
                     @{Name="Description";Expression={ $_.properties.description }} | 
                 Sort-Object -Property SamAccountName |

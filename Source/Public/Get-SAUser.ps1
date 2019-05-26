@@ -100,7 +100,10 @@
         If (@($Found).Count -gt 1)
         {
             #Found more than one, need to select which one you want
-            $Selected = $Found | Select-Object @{Name="SamAccountName";Expression={ $_.properties.samaccountname }},@{Name="DisplayName";Expression={ $_.properties.displayname }} | Out-GridView -Title "Select the user you want" -PassThru
+            $Selected = $Found | 
+                Select-Object @{Name="SamAccountName";Expression={ $_.properties.samaccountname }},
+                    @{Name="DisplayName";Expression={ $_.properties.displayname }} | 
+                Out-GridView -Title "Select the user you want" -PassThru
             If (@($Selected).Count -eq 0)
             {
                 Write-Warning "No user selected"
