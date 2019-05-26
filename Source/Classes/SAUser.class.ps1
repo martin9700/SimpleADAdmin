@@ -15,7 +15,7 @@
     [string]   $ObjectSID
     [string[]] $MemberOf
     [string]   $Manager
-    [string]   $LastLogon
+    [string]   $LastLogon = "Unknown"
     [boolean]  $LockedOut
     [int]      $BadPasswordCount
     [boolean]  $PasswordExpired
@@ -89,7 +89,6 @@
         $this.ObjectSID            = (New-Object System.Security.Principal.SecurityIdentifier(($Found.properties.objectsid | Select-Object -First 1),0)).Value
         $this.MemberOf             = $Found.properties.memberof
         $this.Manager              = $Found.properties.manager | Select-Object -First 1
-        $this.LastLogon            = "Unknown"
         $this.LockedOut            = (($Found.properties.lockouttime | Select-Object -First 1) -gt 0)
         $this.BadPasswordCount     = $Found.properties.badpwdcount | Select-Object -First 1
         $this.PasswordExpired      = [bool]($Found.userAccountControl -band $PASSWORD_EXPIRED)
@@ -126,6 +125,34 @@
             $GroupObj.Add("LDAP://$($this.distinguishedName)")
             Write-Verbose "Added to Group ""$($Found.properties.name)"", will take a minute to show up in `$SAUser" -Verbose
         }
+    }
+
+    hidden [PSCustomObject] Get4740Events ( [datetime]$Start, [datetime]$End )
+    {
+        $PDCEmulator = [System.DirectoryServices.ActiveDirectory.Domain]::GetCurrentDomain().DomainControllers | Where-Object Roles -Contains "PdcRole" | Select-Object -ExpandProperty Name
+        Write-Verbose "PDC Emulator: $PDCEmulator" -Verbose
+
+        $FilterHash = @{
+            LogName   = "Security"
+            StartTime = $Start
+            EndTime   = $End
+            ID        = 4740
+        }
+
+        $Results = $null
+        Write-Verbose "Searching (be patient)..." -Verbose
+        Try {
+            $Results = Get-WinEvent -ComputerName $PDCEmulator -FilterHashtable $FilterHash -ErrorAction Stop | 
+                Where-Object Message -Like "*$($this.SamAccountName)*" | 
+                Select-Object TimeCreated,
+                    @{Name="User";Expression={$Username}},
+                    @{Name="LockedOn";Expression={$PSItem.Properties.Value[1]}},
+                    @{Name="DC";Expression={$PDCEmulator}}
+        }
+        Catch {
+            Write-Error "Unable to retrieve event log for $PDCEmulator because ""$_""" -ErrorAction Stop
+        }
+        Return $Results
     }
 
     [void] Unlock ()
@@ -210,15 +237,48 @@
 
     [void] ResetPassword ()
     {
+        $Password1 = Get-Credential -UserName $this.SamAccountName -Message "Enter new password"
+        $Password2 = Get-Credential -UserName $this.SamAccountName -Message "Verify new password"
+        If ($Password1.GetNetworkCredential().Password -ceq $Password2.GetNetworkCredential().Password)
+        {
+            $UserObj = [ADSI]"LDAP://$($this.distinguishedName)"
+            $UserObj.SetPassword($Password1.GetNetworkCredential().Password)
+        }
+        Else
+        {
+            Write-Error "Passwords did not match" -ErrorAction Stop
+        }
     }
 
     [void] GetLastLogon ()
     {
+        $DCs = [System.DirectoryServices.ActiveDirectory.Domain]::GetCurrentDomain().DomainControllers | Select-Object -ExpandProperty Name
+        $Count = 1
+        $DCData = ForEach ($DC in $DCs)
+        {
+            Write-Progress -Activity "Retrieving user data from Domain Controllers" -Status "...$DC ($Count of $($DCs.Count))" -Id 0 -PercentComplete ($Count * 100 / $DCs.Count)
+            $UserObj = [ADSI]"LDAP://$DC/$($this.distinguishedName)"
+            If ($null -ne ($UserObj.lastlogon | Select-Object -First 1))
+            {
+                [datetime]::FromFileTime($UserObj.ConvertLargeIntegerToInt64(($UserObj.lastLogon | Select-Object -First 1)))
+            }
+            $Count ++
+        }
+        Write-Progress -Activity " " -Status " " -Completed
+        $this.LastLogon = ($DCData | Sort-Object -Descending | Select-Object -First 1).ToString()
+        
+        Write-Verbose "Last Logon for $($this.Name) was $($this.LastLogon)" -Verbose
     }
 
-    [void] FindLockout ()
+    [PSCustomObject] FindLockout ()
     {
+        $Start = (Get-Date).AddDays(-2)
+        $End   = Get-Date
+        $Results = $this.Get4740Events($Start, $End)
+        Return $Results
     }
+
+
 
 
 }
