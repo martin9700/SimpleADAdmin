@@ -4,6 +4,7 @@
 The idea behind SimpleADAdmin was to provide a single function to do your most common administrative tasks.  When managing users on a day to day basis what do we do?  Reset passwords, unlock accounts, add and remove from groups and do some forensics about why they locked out in the first place.  All of this can be done from Get-SAUser.  A new addition is Get-SAGroup which allows you to do similar things with Active Directory groups (see below).
 
 Current functions available in SimpleADAdmin
+
 | Function | Description | Global Variable |
 | -------- | ----------- | --------------- |
 | Get-SAUser | Manipulate user objects | $SAUser |
