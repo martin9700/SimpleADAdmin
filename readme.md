@@ -6,7 +6,7 @@ The idea behind SimpleADAdmin was to provide a single function to do your most c
 Current functions available in SimpleADAdmin
 
 | Function | Description | Global Variable |
-| -------- | ----------- | --------------- |
+| :-------- | :----------- | :--------------- |
 | Get-SAUser | Manipulate user objects | $SAUser |
 | Get-SAGroup | Manipulate groups | $SAGroup |
 | Get-SADomainController | Discover domain controllers, and their roles | None |
