@@ -65,7 +65,7 @@
         Changelog:
             05/25/19        Initial Release
     .LINK
-    
+        https://github.com/martin9700/SimpleADAdmin
     #>
     [CmdletBinding()]
     Param (
