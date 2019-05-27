@@ -9,6 +9,7 @@ Current functions available in SimpleADAdmin
 | :-------- | :----------- | :--------------- |
 | Get-SAUser | Manipulate user objects | $SAUser |
 | Get-SAGroup | Manipulate groups | $SAGroup |
+| Get-SADomain           | Display domain information, including detailed site information | None            |
 | Get-SADomainController | Discover domain controllers, and their roles | None |
 
 
