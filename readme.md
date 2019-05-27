@@ -32,7 +32,8 @@ Get-SAUser creates a global variable called $SAUser, and this is where all the m
     
         FindLockout
                   Usage: $SAUser.FindLockedout()
-            Description: Will go to the PDC emulator and look for event ID 4740 (lockout) in                      the Security Event Log. 
+            Description: Will go to the PDC emulator and look for event ID 4740 (lockout)
+                         in the Security Event Log. 
                Overload: None
     
         GetGroups
