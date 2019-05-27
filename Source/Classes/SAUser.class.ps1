@@ -128,7 +128,7 @@
 
     hidden [PSCustomObject] Get4740Events ( [datetime]$Start, [datetime]$End )
     {
-        $PDCEmulator = [System.DirectoryServices.ActiveDirectory.Domain]::GetCurrentDomain().DomainControllers | Where-Object Roles -Contains "PdcRole" | Select-Object -ExpandProperty Name
+        $PDCEmulator = Get-SADomainController | Where-Object Roles -Contains "PdcRole" | Select-Object -ExpandProperty Name
         Write-Verbose "PDC Emulator: $PDCEmulator" -Verbose
 
         $FilterHash = @{
@@ -251,7 +251,7 @@
 
     [void] GetLastLogon ()
     {
-        $DCs = [System.DirectoryServices.ActiveDirectory.Domain]::GetCurrentDomain().DomainControllers | Select-Object -ExpandProperty Name
+        $DCs = Get-SADomainController | Select-Object -ExpandProperty Name
         $Count = 1
         $DCData = ForEach ($DC in $DCs)
         {
@@ -277,7 +277,18 @@
         Return $Results
     }
 
+    [PSCustomObject] FindLockout ( [datetime]$Start )
+    {
+        $End   = Get-Date
+        $Results = $this.Get4740Events($Start, $End)
+        Return $Results
+    }
 
+    [PSCustomObject] FindLockout ( [datetime]$Start, [datetime]$End)
+    {
+        $Results = $this.Get4740Events($Start, $End)
+        Return $Results
+    }
 
 
 }
