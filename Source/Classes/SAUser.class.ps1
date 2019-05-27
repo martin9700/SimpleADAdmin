@@ -277,7 +277,18 @@
         Return $Results
     }
 
+    [PSCustomObject] FindLockout ( [datetime]$Start )
+    {
+        $End   = Get-Date
+        $Results = $this.Get4740Events($Start, $End)
+        Return $Results
+    }
 
+    [PSCustomObject] FindLockout ( [datetime]$Start, [datetime]$End)
+    {
+        $Results = $this.Get4740Events($Start, $End)
+        Return $Results
+    }
 
 
 }

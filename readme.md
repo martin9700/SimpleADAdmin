@@ -12,6 +12,7 @@ Current functions available in SimpleADAdmin
 | Get-SADomainController | Discover domain controllers, and their roles | None |
 
 
+
 ## $SAUser
 Get-SAUser creates a global variable called $SAUser, and this is where all the magic happens.  After running Get-SAUser, it will display some basic details about the user (and a better default set then what Get-ADUser gives you) and populate the $SAUser variable.  There is a lot more data in $SAUser then the default view, but I wanted to keep it simple.  You use methods assigned to $SAUser to make changes (see below).
 
@@ -26,7 +27,7 @@ Get-SAUser creates a global variable called $SAUser, and this is where all the m
                   Usage: $SAUser.AddGroup("NameOfGroup")
             Description: Add the user to a group.
                Overload: You can add the name of a group in the overload and the function will find all groups
-						 that match that name pattern and let you select which group or groups you want to add.  
+that match that name pattern and let you select which group or groups you want to add.  
 						 If you give an exact match it will just add it without prompting.
 
         FindLockout
