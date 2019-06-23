@@ -106,7 +106,7 @@
                 distinguishedName = $Found.properties.distinguishedname | Select-Object -First 1
             }
         }
-        Return $Results
+        Return ($Results | Sort)
     }
 
     hidden [void] AddUserToGroup ( [string]$DN )
